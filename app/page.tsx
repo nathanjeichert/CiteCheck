@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Spinner from "@/components/Spinner";
 import CiteResults, { type CiteResult } from "@/components/CiteResults";
+import LinkifiedText from "@/components/LinkifiedText";
 
 export default function Page() {
   const [text, setText] = useState("");
@@ -57,8 +58,17 @@ export default function Page() {
       </button>
 
       {error && <p className="text-red-700">Error: {error}</p>}
-      {results && <CiteResults results={results} />}
+      {results && (
+        <div className="space-y-4">
+          <CiteResults results={results} />
+          <details className="rounded-xl border p-3">
+            <summary className="cursor-pointer select-none text-sm text-zinc-700">Linkified Text (found citations)</summary>
+            <div className="mt-3 rounded-md bg-zinc-50 p-3">
+              <LinkifiedText text={text} results={results} />
+            </div>
+          </details>
+        </div>
+      )}
     </main>
   );
 }
-
