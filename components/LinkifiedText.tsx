@@ -1,4 +1,4 @@
-import { type CiteResult } from "@/components/CiteResults";
+import { type CiteResult } from "./CiteResults";
 
 type Props = {
   text: string;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CheckCitesSchema } from "@/lib/validation";
+import { CheckCitesSchema } from "../../lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,4 +82,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-

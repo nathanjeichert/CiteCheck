@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Spinner from "@/components/Spinner";
-import CiteResults, { type CiteResult } from "@/components/CiteResults";
-import LinkifiedText from "@/components/LinkifiedText";
+import Spinner from "../components/Spinner";
+import CiteResults, { type CiteResult } from "../components/CiteResults";
+import LinkifiedText from "../components/LinkifiedText";
 
 export default function Page() {
   const [text, setText] = useState("");
