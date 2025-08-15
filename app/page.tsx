@@ -10,6 +10,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<CiteResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showNotFound, setShowNotFound] = useState(false);
   const max = Number(process.env.NEXT_PUBLIC_MAX_INPUT_CHARS || 64000);
   const over = text.length > max;
 
@@ -62,9 +63,26 @@ export default function Page() {
         <div className="space-y-4">
           <CiteResults results={results} />
           <details className="rounded-xl border p-3">
-            <summary className="cursor-pointer select-none text-sm text-zinc-700">Linkified Text (found citations)</summary>
+            <summary className="cursor-pointer select-none text-sm text-zinc-700">
+              Linkified Text (found citations)
+            </summary>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-sm text-zinc-700">
+                <input
+                  type="checkbox"
+                  checked={showNotFound}
+                  onChange={(e) => setShowNotFound(e.target.checked)}
+                />
+                Show “not found” highlights
+              </label>
+            </div>
             <div className="mt-3 rounded-md bg-zinc-50 p-3">
-              <LinkifiedText text={text} results={results} />
+              <LinkifiedText
+                text={text}
+                results={results}
+                linkOnlyFound={!showNotFound}
+                highlightNotFound={showNotFound}
+              />
             </div>
           </details>
         </div>

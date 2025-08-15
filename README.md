@@ -47,4 +47,4 @@ A citation counts as found only if `status === 200` and `clusters.length > 0`.
 4. Map either `citecheck.yourdomain.com` (simple) or front with a load balancer for `/citecheck/*` path routing.
 
 If you want, we can also add a tiny linkifier that re-renders your pasted text with inline anchors using `start_index`/`end_index` for debugging.
-Now included: open the “Linkified Text (found citations)” panel after running a check to see inline links to CourtListener where matches were found.
+Now included: open the “Linkified Text (found citations)” panel after running a check to see inline links to CourtListener where matches were found. Toggle “Show not found highlights” to visualize unmatched detected citations inline (yellow highlight) using the indices from the API.
