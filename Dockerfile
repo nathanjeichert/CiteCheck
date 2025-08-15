@@ -7,10 +7,10 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
 RUN \
-  if [ -f package-lock.json ]; then npm ci --omit=dev; \
-  elif [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn workspaces focus --all --production; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable && corepack prepare pnpm@latest --activate && pnpm install --prod --frozen-lockfile; \
-  else npm i --omit=dev; fi
+  if [ -f package-lock.json ]; then npm ci; \
+  elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile; \
+  else npm i; fi
 
 # Build
 FROM base AS build
@@ -29,7 +29,8 @@ COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY package.json ./
 COPY --from=deps /app/node_modules ./node_modules
+# Remove dev deps for runtime
+RUN npm prune --omit=dev || true
 
 EXPOSE 8080
 CMD ["npx", "next", "start", "-p", "8080"]
-
