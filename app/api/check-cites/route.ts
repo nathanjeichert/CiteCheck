@@ -12,7 +12,6 @@ async function fetchWithTimeout(input: RequestInfo, init: RequestInit & { timeou
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    // @ts-expect-error Type narrowing for Node fetch
     const res = await fetch(input, { ...rest, signal: ctrl.signal });
     return res;
   } finally {
