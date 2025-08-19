@@ -5,6 +5,8 @@ WORKDIR /app
 
 # Install deps separately to leverage Docker cache
 FROM base AS deps
+# Temporarily unset NODE_ENV to install devDependencies needed for build
+ENV NODE_ENV=
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
 RUN \
   if [ -f package-lock.json ]; then npm ci; \
