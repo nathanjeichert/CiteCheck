@@ -15,19 +15,27 @@ export type CiteResult = {
 
 export default function CiteResults({ results }: { results: CiteResult[] }) {
   const [copied, setCopied] = useState(false);
-  const failed = results.filter(r => r.status !== 200 || !r.clusters || r.clusters.length === 0);
-  const found = results.filter(r => r.status === 200 && r.clusters && r.clusters.length > 0);
+  const failed = results.filter(
+    (r) => r.status !== 200 || !r.clusters || r.clusters.length === 0
+  );
+  const found = results.filter(
+    (r) => r.status === 200 && r.clusters && r.clusters.length > 0
+  );
   const allGood = results.length > 0 && failed.length === 0;
 
   if (results.length === 0) {
-    return <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3">No citations detected.</div>;
+    return (
+      <div className="rounded-lg border border-warm-border bg-warm-yellow-bg p-4 text-sm text-warm-yellow">
+        No citations detected.
+      </div>
+    );
   }
 
   async function copyResults() {
     const lines: string[] = [];
     if (found.length > 0) {
       lines.push(`FOUND (${found.length}):`);
-      found.forEach(r => {
+      found.forEach((r) => {
         const norm = r.normalized_citations?.[0] ?? r.citation;
         const url = r.clusters?.[0]?.absolute_url
           ? `https://www.courtlistener.com${r.clusters[0].absolute_url}`
@@ -38,8 +46,10 @@ export default function CiteResults({ results }: { results: CiteResult[] }) {
     if (failed.length > 0) {
       if (lines.length > 0) lines.push("");
       lines.push(`NOT FOUND (${failed.length}):`);
-      failed.forEach(r => {
-        lines.push(`  ${r.citation}${r.error_message ? ` — ${r.error_message}` : ""}`);
+      failed.forEach((r) => {
+        lines.push(
+          `  ${r.citation}${r.error_message ? ` — ${r.error_message}` : ""}`
+        );
       });
     }
     try {
@@ -52,59 +62,99 @@ export default function CiteResults({ results }: { results: CiteResult[] }) {
   }
 
   return (
-    <section className="space-y-4">
-      {/* Summary */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-600">
-          {found.length} of {results.length} citation{results.length !== 1 ? "s" : ""} verified
+    <section className="space-y-5">
+      {/* Summary bar */}
+      <div className="flex items-center justify-between rounded-lg bg-[rgba(30,58,95,0.06)] px-4 py-3">
+        <p className="text-sm font-medium text-warm-accent">
+          {found.length} of {results.length} citation
+          {results.length !== 1 ? "s" : ""} verified
         </p>
         <button
           type="button"
           onClick={copyResults}
-          className="text-sm text-zinc-500 underline hover:text-zinc-700"
+          className="text-sm text-warm-muted underline hover:text-warm-accent transition-colors"
         >
           {copied ? "Copied!" : "Copy results"}
         </button>
       </div>
 
       {allGood ? (
-        <div className="rounded-md border border-green-200 bg-green-50 p-3 font-medium">All citations found.</div>
+        <div className="rounded-lg border border-green-200 bg-warm-green-bg p-4 text-sm font-medium text-warm-green">
+          All citations found.
+        </div>
       ) : (
         <>
-          <h2 className="text-lg font-semibold">Not Found</h2>
-          <ul className="list-disc space-y-2 pl-6">
-            {failed.map((r, i) => (
-              <li key={i} className="text-red-700">
-                <span className="font-mono">{r.citation}</span>{" "}
-                {r.error_message ? <em>— {r.error_message}</em> : null}
-              </li>
-            ))}
-          </ul>
+          {/* Not Found section */}
+          {failed.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest text-warm-dim">
+                Not Found
+              </h2>
+              <div className="space-y-2">
+                {failed.map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 rounded-lg border border-warm-border bg-warm-white p-4"
+                  >
+                    <span className="mt-0.5 text-warm-red font-bold text-sm select-none flex-shrink-0">
+                      ✕
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-warm-body break-words">
+                        {r.citation}
+                      </p>
+                      {r.error_message && (
+                        <p className="mt-1 text-xs text-warm-dim">
+                          {r.error_message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
+      {/* Found section */}
       {found.length > 0 && (
-        <details className="group">
-          <summary className="cursor-pointer select-none text-sm text-zinc-700 group-open:pb-2">
-            Show Found ({found.length})
-          </summary>
-          <ul className="list-disc space-y-1 pl-6 text-sm">
+        <div className="space-y-3">
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-warm-dim">
+            Found
+          </h2>
+          <div className="space-y-2">
             {found.map((r, i) => {
               const norm = r.normalized_citations?.[0] ?? r.citation;
-              const url = r.clusters?.[0]?.absolute_url ? `https://www.courtlistener.com${r.clusters[0].absolute_url}` : undefined;
+              const url = r.clusters?.[0]?.absolute_url
+                ? `https://www.courtlistener.com${r.clusters[0].absolute_url}`
+                : undefined;
               return (
-                <li key={i}>
-                  <span className="font-mono">{norm}</span>
-                  {url ? (
-                    <>
-                      {" "}— <a className="underline" href={url} target="_blank" rel="noreferrer">View on CourtListener</a>
-                    </>
-                  ) : null}
-                </li>
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-warm-border bg-warm-white p-4"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="mt-0.5 text-warm-green font-bold text-sm select-none flex-shrink-0">
+                      ✓
+                    </span>
+                    <p className="text-sm text-warm-body break-words">{norm}</p>
+                  </div>
+                  {url && (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-shrink-0 text-sm font-medium text-warm-accent hover:text-warm-accent-light transition-colors whitespace-nowrap"
+                    >
+                      View →
+                    </a>
+                  )}
+                </div>
               );
             })}
-          </ul>
-        </details>
+          </div>
+        </div>
       )}
     </section>
   );

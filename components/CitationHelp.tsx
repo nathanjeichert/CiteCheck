@@ -17,25 +17,27 @@ export default function CitationHelp() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="text-zinc-500 underline hover:text-zinc-700"
+        className="text-warm-muted hover:underline hover:text-warm-accent transition-colors"
         aria-expanded={open}
       >
         {open ? "Hide citation examples" : "What citation formats are supported?"}
       </button>
       {open && (
-        <div className="mt-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-zinc-700">
-          <p className="mb-2">
+        <div className="mt-3 rounded-lg border border-warm-border bg-warm-subtle p-4 text-warm-body">
+          <p className="mb-3 text-sm">
             CiteCheck recognizes standard Bluebook case citations. Paste any text containing citations like:
           </p>
-          <ul className="space-y-1 pl-4 list-disc">
+          <ul className="space-y-2 pl-4 list-disc text-sm">
             {EXAMPLES.map((ex, i) => (
               <li key={i}>
-                <code className="text-xs bg-white px-1 py-0.5 rounded border">{ex.cite}</code>
-                <span className="ml-1 text-zinc-500">({ex.note})</span>
+                <code className="text-xs bg-warm-white px-1.5 py-0.5 rounded border border-warm-border font-mono">
+                  {ex.cite}
+                </code>
+                <span className="ml-1.5 text-warm-dim">({ex.note})</span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-zinc-500">
+          <p className="mt-3 text-xs text-warm-dim">
             Citations are verified against the CourtListener database maintained by the Free Law Project.
           </p>
         </div>

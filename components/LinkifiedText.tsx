@@ -51,14 +51,14 @@ export default function LinkifiedText({ text, results, linkOnlyFound = true, hig
     const slice = text.slice(r.start, r.end);
     if (r.href) {
       parts.push(
-        <a key={`${r.start}-${r.end}`} className="underline text-blue-700" href={r.href} target="_blank" rel="noreferrer">
+        <a key={`${r.start}-${r.end}`} className="underline text-warm-accent hover:text-warm-accent-light transition-colors" href={r.href} target="_blank" rel="noreferrer">
           {slice}
         </a>
       );
     } else {
       // Not-found highlight
       parts.push(
-        <span key={`${r.start}-${r.end}`} className="bg-yellow-100 text-zinc-900">
+        <span key={`${r.start}-${r.end}`} className="bg-warm-yellow-bg text-warm-text">
           {slice}
         </span>
       );
@@ -67,7 +67,7 @@ export default function LinkifiedText({ text, results, linkOnlyFound = true, hig
   }
   if (i < len) parts.push(text.slice(i));
 
-  return <div className="whitespace-pre-wrap break-words">{parts}</div>;
+  return <div className="whitespace-pre-wrap break-words text-sm text-warm-body leading-relaxed">{parts}</div>;
 }
 
 function clamp(min: number, x: number, max: number) {

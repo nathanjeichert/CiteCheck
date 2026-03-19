@@ -23,7 +23,7 @@ export default function Page() {
       const res = await fetch("/api/check-cites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
@@ -44,72 +44,159 @@ export default function Page() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">CiteCheck</h1>
-      <p className="text-sm text-zinc-600">
-        Paste text with Bluebook citations and click <strong>Check Cites</strong>.
-      </p>
-      <CitationHelp />
-      <textarea
-        aria-label="Text containing legal citations"
-        className="w-full min-h-[220px] rounded-xl border p-3"
-        placeholder="Paste your text…"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-      <div className="flex items-center justify-between text-sm text-zinc-600">
-        <span>Characters: {text.length.toLocaleString()} / {MAX_INPUT_CHARS.toLocaleString()}</span>
-        {over && <span className="text-red-700 font-medium">Over limit</span>}
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onCheck}
-          disabled={loading || !text.trim() || over}
-          className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-          aria-label="Check citations"
-        >
-          {loading ? (<><Spinner /> Checking…</>) : "Check Cites"}
-        </button>
-        {(text || results) && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="rounded-xl border px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-400"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {error && <p className="text-red-700" role="alert">Error: {error}</p>}
-      {results && (
-        <div className="space-y-4">
-          <CiteResults results={results} />
-          <details className="rounded-xl border p-3">
-            <summary className="cursor-pointer select-none text-sm text-zinc-700">
-              Linkified Text (found citations)
-            </summary>
-            <div className="mt-3 flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showNotFound}
-                  onChange={(e) => setShowNotFound(e.target.checked)}
-                />
-                Highlight not-found citations
-              </label>
-            </div>
-            <div className="mt-3 rounded-md bg-zinc-50 p-3">
-              <LinkifiedText
-                text={text}
-                results={results}
-                linkOnlyFound={!showNotFound}
-                highlightNotFound={showNotFound}
-              />
-            </div>
-          </details>
+    <div className="min-h-full flex flex-col">
+      {/* Nav bar */}
+      <nav className="sticky top-0 z-10 bg-warm-white border-b border-warm-border">
+        <div className="mx-auto max-w-2xl flex items-center justify-between px-6 py-3">
+          <span className="font-serif text-xl font-bold text-warm-text tracking-tight">
+            CiteCheck
+          </span>
+          <div className="flex items-center gap-4 text-sm text-warm-muted">
+            <a
+              href="https://github.com/nathaneichert"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-warm-accent transition-colors"
+            >
+              GitHub
+            </a>
+            <span className="text-warm-dim">by Nathan Eichert</span>
+          </div>
         </div>
-      )}
-    </main>
+      </nav>
+
+      {/* Main content */}
+      <main className="mx-auto w-full max-w-2xl px-6 pt-14 pb-12 flex-1">
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <h1 className="font-serif text-[28px] font-bold text-warm-text leading-tight">
+              CiteCheck
+            </h1>
+            <p className="mt-2 text-[15px] text-warm-muted leading-relaxed">
+              Paste text with Bluebook citations to verify them against CourtListener.
+            </p>
+          </div>
+
+          <CitationHelp />
+
+          {/* Textarea */}
+          <div>
+            <textarea
+              aria-label="Text containing legal citations"
+              className="w-full min-h-[220px] rounded-lg bg-warm-white text-warm-body text-sm leading-relaxed
+                         border-[1.5px] border-warm-border p-4 font-sans
+                         placeholder:text-warm-dim
+                         focus:border-warm-accent focus:outline-none focus:ring-1 focus:ring-warm-accent/20
+                         transition-colors"
+              placeholder="Paste your text..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <div className="mt-1.5 flex items-center justify-between text-xs text-warm-dim">
+              <span>
+                {text.length.toLocaleString()} / {MAX_INPUT_CHARS.toLocaleString()} characters
+              </span>
+              {over && (
+                <span className="text-warm-red font-medium">Over limit</span>
+              )}
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onCheck}
+              disabled={loading || !text.trim() || over}
+              className="inline-flex items-center gap-2 rounded-md bg-warm-accent px-5 py-2.5 text-sm font-medium text-white
+                         hover:bg-warm-accent-light disabled:opacity-50 disabled:cursor-not-allowed
+                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-accent
+                         transition-colors"
+              aria-label="Check citations"
+            >
+              {loading ? (
+                <>
+                  <Spinner /> Checking...
+                </>
+              ) : (
+                "Check Cites"
+              )}
+            </button>
+            {(text || results) && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="rounded-md border border-warm-border px-5 py-2.5 text-sm font-medium text-warm-body
+                           bg-transparent hover:bg-warm-white hover:border-warm-border-hover
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warm-accent/40
+                           transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div
+              className="rounded-lg border border-red-200 bg-warm-red-bg p-4 text-sm text-warm-red"
+              role="alert"
+            >
+              <span className="font-medium">Error:</span> {error}
+            </div>
+          )}
+
+          {/* Results */}
+          {results && (
+            <div className="space-y-6">
+              <CiteResults results={results} />
+
+              {/* Linkified Text */}
+              <details className="rounded-lg border border-warm-border bg-warm-white overflow-hidden">
+                <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-warm-body hover:bg-warm-subtle transition-colors">
+                  Linkified Text (found citations)
+                </summary>
+                <div className="border-t border-warm-border px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm text-warm-body cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showNotFound}
+                        onChange={(e) => setShowNotFound(e.target.checked)}
+                        className="rounded"
+                      />
+                      Highlight not-found citations
+                    </label>
+                  </div>
+                  <div className="mt-3 rounded-lg bg-warm-subtle p-4">
+                    <LinkifiedText
+                      text={text}
+                      results={results}
+                      linkOnlyFound={!showNotFound}
+                      highlightNotFound={showNotFound}
+                    />
+                  </div>
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-warm-border py-6">
+        <p className="text-center text-xs text-warm-dim">
+          Powered by{" "}
+          <a
+            href="https://www.courtlistener.com"
+            target="_blank"
+            rel="noreferrer"
+            className="underline hover:text-warm-muted transition-colors"
+          >
+            CourtListener
+          </a>
+        </p>
+      </footer>
+    </div>
   );
 }
