@@ -359,7 +359,7 @@ function ResultSection({
                   <p className={`${c.caseName ? "mt-0.5 text-xs text-warm-muted" : "text-sm text-warm-body"} break-words`}>{norm}</p>
                   {c.namesMismatch && c.citedName && (
                     <p className="mt-1 text-xs text-warm-orange">
-                      Name mismatch — you cited &ldquo;{c.citedName}&rdquo;
+                      Name mismatch; you cited &ldquo;{c.citedName}&rdquo;
                     </p>
                   )}
                   {c.tier === "orange" && !c.namesMismatch && c.reasons.length > 0 && (
