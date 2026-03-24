@@ -58,18 +58,21 @@ const FAQ_ITEMS = [
           case&rsquo;s decision date.
         </p>
         <p className="mt-2">
-          Importantly, this means CiteCheck does <strong>not</strong> verify:
+          CiteCheck also performs a basic <strong>case name check</strong>: it compares the party
+          names in your text against the case name returned by CourtListener. If neither side of
+          the &ldquo;v.&rdquo; has any matching words, the citation is flagged as likely incorrect
+          (red). If one side matches but the other doesn&rsquo;t, it&rsquo;s flagged for attention
+          (orange). This catches the most common AI hallucination pattern — a fabricated case name
+          attached to a real reporter citation.
+        </p>
+        <p className="mt-2">
+          However, CiteCheck does <strong>not</strong> verify:
         </p>
         <ul className="mt-1 space-y-1 pl-4 list-disc">
-          <li>Whether the <strong>case name</strong> (party names) matches the citation — the case name from CourtListener is displayed for you to confirm</li>
           <li>Whether quotes attributed to the case are accurate</li>
           <li>Whether the holding or legal rule is correctly stated</li>
           <li>Whether the case is still good law (not overruled or distinguished)</li>
         </ul>
-        <p className="mt-2">
-          A citation to a real volume/reporter/page that is attributed to the wrong case name will
-          appear as &ldquo;verified&rdquo; — always check the case name shown in the results.
-        </p>
       </>
     ),
   },

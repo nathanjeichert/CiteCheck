@@ -5,9 +5,9 @@ Verify Bluebook-style case citations using CourtListener's Citation Lookup & Ver
 ## Features
 
 - **Three-tier citation classification:**
-  - **Verified (green):** Volume, reporter, page, and year all confirmed against CourtListener's database.
-  - **Needs Attention (orange):** Citation found but something is off — year mismatch, ambiguous reporter, unrecognized reporter abbreviation, or non-precedential opinion.
-  - **Not Found (red):** No matching case in the database. May indicate a hallucinated or incorrect citation.
+  - **Verified (green):** Volume, reporter, page, year, and case name all check out.
+  - **Needs Attention (orange):** Citation found but something is off — year mismatch, partial case name mismatch, ambiguous reporter, unrecognized reporter abbreviation, or non-precedential opinion.
+  - **Not Found (red):** No matching case in the database, or the case name has no overlap with the returned case on both sides of the "v." — likely hallucinated.
 - **Hover tooltips** with case name, decision date, parallel citations, and detailed explanations.
 - **Inline linkified text** with color-coded citations linked to CourtListener.
 - **FAQ sidebar** explaining supported formats, jurisdiction coverage, verification methodology, and data privacy.
@@ -43,13 +43,15 @@ Each citation in the response is classified into one of three tiers:
 
 | Tier | Condition |
 |------|-----------|
-| **Verified** | `status 200`, single matching cluster, and year matches (if provided) |
-| **Needs Attention** | `status 200` with year mismatch, `status 300` (ambiguous reporter), `status 400` (unrecognized reporter), or unpublished opinion |
-| **Not Found** | `status 404` or no matching clusters |
+| **Verified** | `status 200`, single matching cluster, year matches (if provided), and case name check passes |
+| **Needs Attention** | Year mismatch, one side of case name doesn't match, `status 300` (ambiguous reporter), `status 400` (unrecognized reporter), or unpublished opinion |
+| **Not Found** | `status 404`, no matching clusters, or both sides of the case name have zero overlap with the returned case |
 
 ### What CiteCheck verifies
 
-CiteCheck validates citations by **volume, reporter, and page number**, plus the publication year when present. It does **not** verify case names, quoted holdings, or whether the case is still good law.
+CiteCheck validates citations by **volume, reporter, and page number**, plus the publication year when present. It also performs a **case name plausibility check**: the party names in your text are compared against CourtListener's case name. If neither side of the "v." shares any meaningful words, the citation is flagged as likely incorrect (red). If one side matches but the other doesn't, it's flagged for attention (orange). This catches the common AI hallucination pattern of attaching a fabricated case name to a real reporter citation.
+
+CiteCheck does **not** verify quoted holdings, the accuracy of legal propositions attributed to a case, or whether the case is still good law.
 
 The case name returned by CourtListener is displayed alongside each result so users can manually confirm the citation points to the expected case.
 

@@ -59,15 +59,14 @@ function extractWords(s: string): Set<string> {
   return new Set(words.filter((w) => w.length > 1 && !STOP_WORDS.has(w)));
 }
 
-/** Check if the user's cited case name plausibly matches the API's case name.
- *  Returns true (match) if we can't parse either name or if at least one word
- *  overlaps on either side of the "v." */
-function caseNamesPlausiblyMatch(citedName: string, apiName: string): boolean {
-  // Both must contain "v." or "v " to split on
+/** Compare cited case name against API case name.
+ *  Returns "match" if we can't parse or both sides overlap,
+ *  "partial" if one side has zero overlap, "none" if both sides have zero overlap. */
+function compareNames(citedName: string, apiName: string): "match" | "partial" | "none" {
   const splitPattern = /\bv\.?\s/i;
   const citedParts = citedName.split(splitPattern);
   const apiParts = apiName.split(splitPattern);
-  if (citedParts.length < 2 || apiParts.length < 2) return true; // can't compare, assume ok
+  if (citedParts.length < 2 || apiParts.length < 2) return "match"; // can't compare, assume ok
 
   const citedLeft = extractWords(citedParts[0]);
   const citedRight = extractWords(citedParts.slice(1).join(" "));
@@ -75,14 +74,15 @@ function caseNamesPlausiblyMatch(citedName: string, apiName: string): boolean {
   const apiRight = extractWords(apiParts.slice(1).join(" "));
 
   // If either side has no meaningful words after filtering, skip
-  if (citedLeft.size === 0 || citedRight.size === 0) return true;
-  if (apiLeft.size === 0 || apiRight.size === 0) return true;
+  if (citedLeft.size === 0 || citedRight.size === 0) return "match";
+  if (apiLeft.size === 0 || apiRight.size === 0) return "match";
 
-  // Check if at least one word overlaps on either side
   const leftOverlap = [...citedLeft].some((w) => apiLeft.has(w));
   const rightOverlap = [...citedRight].some((w) => apiRight.has(w));
 
-  return leftOverlap || rightOverlap;
+  if (leftOverlap && rightOverlap) return "match";
+  if (leftOverlap || rightOverlap) return "partial";
+  return "none";
 }
 
 /** Try to extract a case name from the source text before the citation's start_index.
@@ -174,9 +174,21 @@ export function classifyCitations(results: CiteResult[], sourceText?: string): C
 
     // Case name mismatch check
     let namesMismatch = false;
-    if (citedName && caseName && !caseNamesPlausiblyMatch(citedName, caseName)) {
-      namesMismatch = true;
-      reasons.push(`Possible case name mismatch: you cited "${citedName}" but this reporter citation corresponds to "${caseName}"`);
+    let nameComparison: "match" | "partial" | "none" = "match";
+    if (citedName && caseName) {
+      nameComparison = compareNames(citedName, caseName);
+      if (nameComparison === "partial") {
+        namesMismatch = true;
+        reasons.push(`Possible case name mismatch: you cited "${citedName}" but this reporter citation corresponds to "${caseName}"`);
+      } else if (nameComparison === "none") {
+        namesMismatch = true;
+        reasons.push(`Case name mismatch: you cited "${citedName}" but this reporter citation corresponds to "${caseName}"`);
+      }
+    }
+
+    // Red if both sides of the name are completely wrong
+    if (nameComparison === "none") {
+      return { result: r, tier: "red" as Tier, reasons, caseName, citedName, year: filedYear, href, parallelCites, namesMismatch };
     }
 
     const tier: Tier = reasons.length > 0 ? "orange" : "green";
