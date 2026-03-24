@@ -51,17 +51,6 @@ export default function Page() {
           <span className="font-serif text-xl font-bold text-warm-text tracking-tight">
             CiteCheck
           </span>
-          <div className="flex items-center gap-4 text-sm text-warm-muted">
-            <a
-              href="https://github.com/nathaneichert"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-warm-accent transition-colors"
-            >
-              GitHub
-            </a>
-            <span className="text-warm-dim">by Nathan Eichert</span>
-          </div>
         </div>
       </nav>
 
