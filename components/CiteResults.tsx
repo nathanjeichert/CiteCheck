@@ -45,14 +45,67 @@ function clusterCaseName(cluster: Cluster): string | null {
   return (cluster.case_name ?? cluster.caseName ?? null) as string | null;
 }
 
+/** Words too common in case names to be meaningful for matching */
+const STOP_WORDS = new Set([
+  "v", "vs", "in", "re", "ex", "rel", "the", "of", "and", "for", "a", "an",
+  "city", "county", "state", "states", "united", "board", "department", "dept",
+  "commission", "committee", "district", "division", "office", "bureau",
+  "inc", "corp", "co", "ltd", "llc", "lp", "na", "al", "et", "no",
+]);
+
+/** Extract meaningful words from one side of a "v." split, lowercased, punctuation stripped */
+function extractWords(s: string): Set<string> {
+  const words = s.toLowerCase().replace(/[.,;:()'"""]/g, "").split(/\s+/).filter(Boolean);
+  return new Set(words.filter((w) => w.length > 1 && !STOP_WORDS.has(w)));
+}
+
+/** Check if the user's cited case name plausibly matches the API's case name.
+ *  Returns true (match) if we can't parse either name or if at least one word
+ *  overlaps on either side of the "v." */
+function caseNamesPlausiblyMatch(citedName: string, apiName: string): boolean {
+  // Both must contain "v." or "v " to split on
+  const splitPattern = /\bv\.?\s/i;
+  const citedParts = citedName.split(splitPattern);
+  const apiParts = apiName.split(splitPattern);
+  if (citedParts.length < 2 || apiParts.length < 2) return true; // can't compare, assume ok
+
+  const citedLeft = extractWords(citedParts[0]);
+  const citedRight = extractWords(citedParts.slice(1).join(" "));
+  const apiLeft = extractWords(apiParts[0]);
+  const apiRight = extractWords(apiParts.slice(1).join(" "));
+
+  // If either side has no meaningful words after filtering, skip
+  if (citedLeft.size === 0 || citedRight.size === 0) return true;
+  if (apiLeft.size === 0 || apiRight.size === 0) return true;
+
+  // Check if at least one word overlaps on either side
+  const leftOverlap = [...citedLeft].some((w) => apiLeft.has(w));
+  const rightOverlap = [...citedRight].some((w) => apiRight.has(w));
+
+  return leftOverlap || rightOverlap;
+}
+
+/** Try to extract a case name from the source text before the citation's start_index.
+ *  Looks for a "Name v. Name," pattern preceding the volume number. */
+function extractCitedCaseName(text: string | undefined, startIndex: number | undefined): string | null {
+  if (!text || startIndex == null || startIndex === 0) return null;
+  // Grab up to 200 chars before the citation
+  const before = text.slice(Math.max(0, startIndex - 200), startIndex);
+  // Look for "Word(s) v. Word(s)," at the end — the comma typically separates name from cite
+  const m = before.match(/([A-Z][A-Za-z.''\-]+(?:\s+[A-Za-z.''\-]+)*\s+v\.?\s+[A-Z][A-Za-z.''\-]+(?:\s+[A-Za-z.''\-]+)*),?\s*$/);
+  return m ? m[1].trim() : null;
+}
+
 export type ClassifiedCite = {
   result: CiteResult;
   tier: Tier;
   reasons: string[];
   caseName: string | null;
+  citedName: string | null;
   year: number | null;
   href: string | null;
   parallelCites: string[];
+  namesMismatch: boolean;
 };
 
 export function classifyCitations(results: CiteResult[], sourceText?: string): ClassifiedCite[] {
@@ -69,17 +122,19 @@ export function classifyCitations(results: CiteResult[], sourceText?: string): C
 
     const reasons: string[] = [];
 
+    const citedName = extractCitedCaseName(sourceText, r.start_index ?? undefined);
+
     // Red: not found or no clusters
     if (r.status === 404 || (r.status === 200 && (!r.clusters || r.clusters.length === 0))) {
       reasons.push("No matching case found in the CourtListener database");
-      return { result: r, tier: "red" as Tier, reasons, caseName: null, year: null, href: null, parallelCites: [] };
+      return { result: r, tier: "red" as Tier, reasons, caseName: null, citedName, year: null, href: null, parallelCites: [], namesMismatch: false };
     }
 
     // Status 400: unrecognized reporter
     if (r.status === 400) {
       reasons.push("Unrecognized reporter abbreviation — check for typos");
       if (r.error_message) reasons.push(r.error_message);
-      return { result: r, tier: "orange" as Tier, reasons, caseName, year: filedYear, href, parallelCites };
+      return { result: r, tier: "orange" as Tier, reasons, caseName, citedName, year: filedYear, href, parallelCites, namesMismatch: false };
     }
 
     // Status 300: ambiguous
@@ -89,13 +144,13 @@ export function classifyCitations(results: CiteResult[], sourceText?: string): C
       if (r.normalized_citations && r.normalized_citations.length > 1) {
         reasons.push(`Possible reporters: ${r.normalized_citations.join(", ")}`);
       }
-      return { result: r, tier: "orange" as Tier, reasons, caseName, year: filedYear, href, parallelCites };
+      return { result: r, tier: "orange" as Tier, reasons, caseName, citedName, year: filedYear, href, parallelCites, namesMismatch: false };
     }
 
     // Status 429 or other non-200
     if (r.status !== 200) {
       reasons.push(r.error_message || `Unexpected status (${r.status})`);
-      return { result: r, tier: "orange" as Tier, reasons, caseName, year: filedYear, href, parallelCites };
+      return { result: r, tier: "orange" as Tier, reasons, caseName, citedName, year: filedYear, href, parallelCites, namesMismatch: false };
     }
 
     // --- Status 200 with clusters: check for orange conditions ---
@@ -117,8 +172,15 @@ export function classifyCitations(results: CiteResult[], sourceText?: string): C
       reasons.push(`Precedential status: ${precStatus}`);
     }
 
+    // Case name mismatch check
+    let namesMismatch = false;
+    if (citedName && caseName && !caseNamesPlausiblyMatch(citedName, caseName)) {
+      namesMismatch = true;
+      reasons.push(`Possible case name mismatch: you cited "${citedName}" but this reporter citation corresponds to "${caseName}"`);
+    }
+
     const tier: Tier = reasons.length > 0 ? "orange" : "green";
-    return { result: r, tier, reasons, caseName, year: filedYear, href, parallelCites };
+    return { result: r, tier, reasons, caseName, citedName, year: filedYear, href, parallelCites, namesMismatch };
   });
 }
 
@@ -248,13 +310,18 @@ function ResultSection({
                   </span>
                 </Tooltip>
                 <div className="min-w-0">
-                  <p className="text-sm text-warm-body break-words">{norm}</p>
                   {c.caseName && (
-                    <p className="mt-0.5 text-xs text-warm-muted">
+                    <p className={`text-sm font-medium break-words ${c.namesMismatch ? "text-warm-orange" : "text-warm-text"}`}>
                       {c.caseName}{c.year ? ` (${c.year})` : ""}
                     </p>
                   )}
-                  {c.tier === "orange" && c.reasons.length > 0 && (
+                  <p className={`${c.caseName ? "mt-0.5 text-xs text-warm-muted" : "text-sm text-warm-body"} break-words`}>{norm}</p>
+                  {c.namesMismatch && c.citedName && (
+                    <p className="mt-1 text-xs text-warm-orange">
+                      Name mismatch — you cited &ldquo;{c.citedName}&rdquo;
+                    </p>
+                  )}
+                  {c.tier === "orange" && !c.namesMismatch && c.reasons.length > 0 && (
                     <p className="mt-1 text-xs text-warm-orange">{c.reasons[0]}</p>
                   )}
                   {c.tier === "red" && c.result.error_message && (
