@@ -86,14 +86,43 @@ function compareNames(citedName: string, apiName: string): "match" | "partial" |
 }
 
 /** Try to extract a case name from the source text before the citation's start_index.
- *  Looks for a "Name v. Name," pattern preceding the volume number. */
+ *  Strategy: find "v." in the preceding text, then expand left and right to grab party names. */
 function extractCitedCaseName(text: string | undefined, startIndex: number | undefined): string | null {
   if (!text || startIndex == null || startIndex === 0) return null;
-  // Grab up to 200 chars before the citation
-  const before = text.slice(Math.max(0, startIndex - 200), startIndex);
-  // Look for "Word(s) v. Word(s)," at the end — the comma typically separates name from cite
-  const m = before.match(/([A-Z][A-Za-z.''\-]+(?:\s+[A-Za-z.''\-]+)*\s+v\.?\s+[A-Z][A-Za-z.''\-]+(?:\s+[A-Za-z.''\-]+)*),?\s*$/);
-  return m ? m[1].trim() : null;
+  const before = text.slice(Math.max(0, startIndex - 200), startIndex).trimEnd().replace(/,\s*$/, "");
+
+  // Find the last "v." or "v " that looks like a case name separator
+  const vMatch = before.match(/^([\s\S]*)\b(v\.?\s)/i);
+  if (!vMatch) return null;
+
+  const preV = vMatch[1];   // everything before "v."
+  const postV = before.slice(vMatch[1].length + vMatch[2].length); // everything after "v."
+
+  // Right side: grab words after "v." up to the end (which is right before the volume number)
+  const rightM = postV.match(/^([A-Z][A-Za-z.'',\s\-]*[A-Za-z.''\-])/);
+  if (!rightM) return null;
+  const rightSide = rightM[1].trim();
+
+  // Left side: walk backwards from "v." to find the start of the plaintiff name.
+  // Stop at sentence boundaries, semicolons, or common signal words.
+  const leftWords = preV.split(/\s+/);
+  const nameWords: string[] = [];
+  for (let i = leftWords.length - 1; i >= 0; i--) {
+    const w = leftWords[i];
+    // Stop if we hit a lowercase word that isn't a common case-name connector
+    if (/^[a-z]/.test(w) && !/^(of|the|for|and|in|on|at|de|del|van|von|der|zu|ex|rel|d')$/i.test(w)) break;
+    // Stop at sentence-ending punctuation
+    if (/[.;:!?]$/.test(w) && !/^[A-Z]\.?$/.test(w) && !/v\.?$/.test(w)) break;
+    nameWords.unshift(w);
+  }
+
+  if (nameWords.length === 0) return null;
+  const leftSide = nameWords.join(" ").replace(/^[,\s]+/, "");
+
+  // Must start with a capital letter to look like a proper name
+  if (!/^[A-Z]/.test(leftSide)) return null;
+
+  return `${leftSide} v. ${rightSide}`;
 }
 
 export type ClassifiedCite = {
