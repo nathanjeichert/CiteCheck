@@ -4,7 +4,7 @@ import { useState } from "react";
 import Spinner from "../components/Spinner";
 import CiteResults, { type CiteResult } from "../components/CiteResults";
 import LinkifiedText from "../components/LinkifiedText";
-import CitationHelp from "../components/CitationHelp";
+import FAQ from "../components/FAQ";
 import { MAX_INPUT_CHARS } from "../lib/validation";
 
 export default function Page() {
@@ -78,7 +78,7 @@ export default function Page() {
             </p>
           </div>
 
-          <CitationHelp />
+          <FAQ />
 
           {/* Textarea */}
           <div>
@@ -149,7 +149,7 @@ export default function Page() {
           {/* Results */}
           {results && (
             <div className="space-y-6">
-              <CiteResults results={results} />
+              <CiteResults results={results} sourceText={text} />
 
               {/* Linkified Text */}
               <details className="rounded-lg border border-warm-border bg-warm-white overflow-hidden">

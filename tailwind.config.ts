@@ -27,6 +27,8 @@ export default {
           "red-bg": "#fef2f2",
           yellow: "#92400e",
           "yellow-bg": "#fffbeb",
+          orange: "#b45309",
+          "orange-bg": "#fff7ed",
         },
       },
     },
